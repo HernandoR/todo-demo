@@ -3,41 +3,73 @@ import axios from "axios";
 import "./App.css";
 
 // 配置axios：开发环境用代理，生产环境用Render后端地址
+const API_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : "https://你的Render后端地址/api"; // 替换为实际地址
+
 const api = axios.create({
-  // 替换为你的Render后端地址（比如https://todo-backend.onrender.com）
-  baseURL: import.meta.env.DEV ? "/api" : "https://你的Render后端地址/api",
+  baseURL: API_BASE_URL,
+  timeout: 5000, // 5秒超时
 });
 
 // 请求拦截器：处理通用错误
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    alert(`请求失败：${error.response?.data?.detail || "网络错误"}`);
+    // 所有请求失败都标记为连接断开
+    if (error.code === "ECONNABORTED" || !error.response) {
+      window.appSetConnected(false); // 全局方法标记连接状态
+    }
+    alert(
+      `请求失败：${error.response?.data?.detail || "网络错误/后端服务不可用"}`,
+    );
     return Promise.reject(error);
   },
 );
 
 function App() {
-  // 状态管理
+  // 核心状态
   const [todos, setTodos] = useState([]);
   const [newTodoTitle, setNewTodoTitle] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(true); // 后端连接状态
 
-  // 加载所有Todo
+  // 把连接状态方法挂载到window，供拦截器调用
   useEffect(() => {
-    fetchTodos();
+    window.appSetConnected = setIsConnected;
+    return () => {
+      delete window.appSetConnected;
+    };
   }, []);
+
+  // 初始化：先检测后端连接，再加载数据
+  useEffect(() => {
+    checkBackendConnection();
+  }, []);
+
+  // 检测后端连接可用性
+  const checkBackendConnection = async () => {
+    setLoading(true);
+    setIsConnected(true);
+    try {
+      // 测试请求：获取Todo列表（也可以单独写个健康检查接口）
+      await api.get("/todos");
+      fetchTodos(); // 连接成功则加载数据
+    } catch (error) {
+      setIsConnected(false);
+      console.error("后端连接失败:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 获取Todo列表
   const fetchTodos = async () => {
-    setLoading(true);
     try {
       const response = await api.get("/todos");
       setTodos(response.data);
     } catch (error) {
       console.error("加载Todo失败:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -82,8 +114,31 @@ function App() {
     }
   };
 
-  return (
-    <div className="app-container">
+  // 兜底页面：连接失败时显示
+  const renderConnectionError = () => (
+    <div className="connection-error">
+      <div className="error-icon">❌</div>
+      <h2>无法连接到后端服务</h2>
+      <p>可能的原因：</p>
+      <ul className="error-reasons">
+        <li>后端服务未启动或已休眠（Render免费版15分钟无请求会休眠）</li>
+        <li>网络连接问题</li>
+        <li>后端地址配置错误</li>
+      </ul>
+      <button
+        className="retry-btn"
+        onClick={() => checkBackendConnection()}
+        disabled={loading}
+      >
+        {loading ? "重试中..." : "重试连接"}
+      </button>
+      <p className="hint">提示：Render免费后端首次访问可能需要10秒左右唤醒</p>
+    </div>
+  );
+
+  // 正常页面：连接成功时显示
+  const renderNormalContent = () => (
+    <>
       <h1>📝 个人待办事项管理</h1>
 
       {/* 添加Todo表单 */}
@@ -135,6 +190,12 @@ function App() {
           ))
         )}
       </div>
+    </>
+  );
+
+  return (
+    <div className="app-container">
+      {isConnected ? renderNormalContent() : renderConnectionError()}
     </div>
   );
 }

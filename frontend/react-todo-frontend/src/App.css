@@ -1,59 +1,187 @@
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
 .app-container {
   max-width: 600px;
   margin: 50px auto;
   padding: 20px;
-  font-family: Arial, sans-serif;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+/* 添加Todo表单 */
 .add-todo-form {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .todo-input {
   flex: 1;
-  padding: 8px;
+  padding: 10px 15px;
   font-size: 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.todo-input:focus {
+  border-color: #3498db;
 }
 
 .add-btn {
-  padding: 8px 16px;
-  background-color: #4caf50;
+  padding: 10px 20px;
+  background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
 }
 
+.add-btn:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.add-btn:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+/* Todo列表 */
 .todo-list {
-  gap: 10px;
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
 .todo-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  gap: 12px;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fafafa;
+  transition: background-color 0.2s;
+}
+
+.todo-item:hover {
+  background-color: #f9f9f9;
+}
+
+.todo-item.completed {
+  background-color: #f1f9f7;
 }
 
 .todo-item.completed span {
   text-decoration: line-through;
-  color: #888;
+  color: #7f8c8d;
+}
+
+.todo-item span {
+  flex: 1;
+  font-size: 16px;
 }
 
 .delete-btn {
-  margin-left: auto;
-  padding: 4px 8px;
-  background-color: #f44336;
+  padding: 6px 12px;
+  background-color: #e74c3c;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.delete-btn:disabled {
+  background-color: #ec7063;
+  cursor: not-allowed;
+}
+
+/* 提示文本 */
+.loading,
+.empty-tip {
+  text-align: center;
+  padding: 20px;
+  color: #7f8c8d;
+  font-size: 16px;
+}
+
+/* 新增：后端连接失败兜底样式 */
+.connection-error {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.error-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+  color: #e74c3c;
+}
+
+.connection-error h2 {
+  color: #c0392b;
+  margin-bottom: 15px;
+  font-size: 22px;
+}
+
+.error-reasons {
+  text-align: left;
+  max-width: 400px;
+  margin: 15px auto 20px;
+  color: #7f8c8d;
+  line-height: 1.6;
+}
+
+.retry-btn {
+  padding: 10px 25px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+  margin-bottom: 15px;
+}
+
+.retry-btn:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.retry-btn:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.hint {
+  color: #95a5a6;
+  font-size: 14px;
+  line-height: 1.5;
 }
