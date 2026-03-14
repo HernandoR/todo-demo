@@ -26,6 +26,8 @@ function App() {
   // 核心状态
   const [todos, setTodos] = useState([]);
   const [newTodoTitle, setNewTodoTitle] = useState("");
+  const [editingTodoId, setEditingTodoId] = useState(null);
+  const [editingTodoTitle, setEditingTodoTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(true); // 后端连接状态
 
@@ -86,14 +88,43 @@ function App() {
   // 切换Todo完成状态
   const toggleTodo = async (id, completed) => {
     try {
-      await api.put(`/todos/${id}`, { completed: !completed });
-      setTodos(
-        todos.map((todo) =>
-          todo.id === id ? { ...todo, completed: !completed } : todo,
-        ),
-      );
+      const response = await api.put(`/todos/${id}`, { completed: !completed });
+      setTodos(todos.map((todo) => (todo.id === id ? response.data : todo)));
     } catch (error) {
       console.error("更新Todo失败:", error);
+    }
+  };
+
+  // 进入编辑模式
+  const startEditingTodo = (todo) => {
+    setEditingTodoId(todo.id);
+    setEditingTodoTitle(todo.title);
+  };
+
+  // 取消编辑
+  const cancelEditingTodo = () => {
+    setEditingTodoId(null);
+    setEditingTodoTitle("");
+  };
+
+  // 保存Todo标题
+  const saveTodoTitle = async (id) => {
+    const currentTodo = todos.find((todo) => todo.id === id);
+    if (!currentTodo) return;
+
+    const title = editingTodoTitle.trim();
+    if (!title) return;
+    if (title === currentTodo.title.trim()) {
+      cancelEditingTodo();
+      return;
+    }
+
+    try {
+      const response = await api.put(`/todos/${id}`, { title });
+      setTodos(todos.map((todo) => (todo.id === id ? response.data : todo)));
+      cancelEditingTodo();
+    } catch (error) {
+      console.error("编辑Todo失败:", error);
     }
   };
 
@@ -104,6 +135,9 @@ function App() {
     try {
       await api.delete(`/todos/${id}`);
       setTodos(todos.filter((todo) => todo.id !== id));
+      if (editingTodoId === id) {
+        cancelEditingTodo();
+      }
     } catch (error) {
       console.error("删除Todo失败:", error);
     }
@@ -171,16 +205,58 @@ function App() {
                 type="checkbox"
                 checked={todo.completed}
                 onChange={() => toggleTodo(todo.id, todo.completed)}
-                disabled={loading}
+                disabled={loading || editingTodoId === todo.id}
               />
-              <span>{todo.title}</span>
-              <button
-                onClick={() => deleteTodo(todo.id)}
-                className="delete-btn"
-                disabled={loading}
-              >
-                删除
-              </button>
+              {editingTodoId === todo.id ? (
+                <input
+                  type="text"
+                  value={editingTodoTitle}
+                  onChange={(e) => setEditingTodoTitle(e.target.value)}
+                  className="edit-input"
+                  disabled={loading}
+                />
+              ) : (
+                <span className="todo-title">{todo.title}</span>
+              )}
+              <div className="todo-actions">
+                {editingTodoId === todo.id ? (
+                  <>
+                    <button
+                      onClick={() => saveTodoTitle(todo.id)}
+                      className="edit-btn save-btn"
+                      disabled={
+                        loading ||
+                        !editingTodoTitle.trim() ||
+                        editingTodoTitle.trim() === todo.title.trim()
+                      }
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={cancelEditingTodo}
+                      className="edit-btn cancel-btn"
+                      disabled={loading}
+                    >
+                      取消
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => startEditingTodo(todo)}
+                    className="edit-btn"
+                    disabled={loading}
+                  >
+                    编辑
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteTodo(todo.id)}
+                  className="delete-btn"
+                  disabled={loading}
+                >
+                  删除
+                </button>
+              </div>
             </div>
           ))
         )}

@@ -2,8 +2,7 @@ import os
 from typing import Annotated, Generator, List, Optional
 
 from dotenv import load_dotenv
-from fastapi import Body, Depends, FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Boolean, Column, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -70,6 +69,11 @@ class Todo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TodoUpdate(BaseModel):
+    title: Optional[str] = None
+    completed: Optional[bool] = None
+
+
 # --------------------------
 # 数据库依赖（获取会话）
 # --------------------------
@@ -106,17 +110,32 @@ def create_todo(
     return db_todo
 
 
-# 3. 更新Todo状态
+# 3. 更新Todo内容/状态
 @app.put("/api/todos/{todo_id}", response_model=Todo)
 def update_todo(
     todo_id: int,
     db: Annotated[Session, Depends(get_db)],
-    completed: bool = Body(),
+    todo_update: TodoUpdate,
 ):
     db_todo = db.query(TodoDB).filter(TodoDB.id == todo_id).first()
     if not db_todo:
         raise HTTPException(status_code=404, detail="Todo not found")
-    db_todo.completed = completed
+
+    if todo_update.title is None and todo_update.completed is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No fields to update. Provide title and/or completed.",
+        )
+
+    if todo_update.title is not None:
+        title = todo_update.title.strip()
+        if not title:
+            raise HTTPException(status_code=400, detail="Title cannot be empty")
+        db_todo.title = title
+
+    if todo_update.completed is not None:
+        db_todo.completed = todo_update.completed
+
     db.commit()
     db.refresh(db_todo)
     return db_todo
