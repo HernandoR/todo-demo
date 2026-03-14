@@ -2,7 +2,7 @@ import os
 from typing import Annotated, Generator, List, Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Body, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Boolean, Column, Integer, String, create_engine
@@ -49,14 +49,14 @@ Base.metadata.create_all(bind=engine)
 # --------------------------
 app = FastAPI(title="Todo API (Render PostgreSQL + SQLAlchemy)", version="1.0")
 
-# 跨域配置（替换为你的GitHub Pages地址）
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://你的GitHub用户名.github.io"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# # 跨域配置（替换为你的GitHub Pages地址）
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["https://你的GitHub用户名.github.io"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 # --------------------------
@@ -86,14 +86,19 @@ def get_db() -> Generator[Session, None, None]:
 # --------------------------
 # 1. 获取所有Todo
 @app.get("/api/todos", response_model=List[Todo])
-def get_todos(db: Annotated[Session, Depends(get_db)]):
+def get_todos(
+    db: Annotated[Session, Depends(get_db)],
+):
     todos = db.query(TodoDB).all()
     return todos
 
 
 # 2. 添加新Todo
 @app.post("/api/todos", response_model=Todo)
-def create_todo(todo: Todo, db: Annotated[Session, Depends(get_db)]):
+def create_todo(
+    db: Annotated[Session, Depends(get_db)],
+    todo: Todo,
+):
     db_todo = TodoDB(title=todo.title, completed=todo.completed)
     db.add(db_todo)
     db.commit()
@@ -103,7 +108,11 @@ def create_todo(todo: Todo, db: Annotated[Session, Depends(get_db)]):
 
 # 3. 更新Todo状态
 @app.put("/api/todos/{todo_id}", response_model=Todo)
-def update_todo(todo_id: int, completed: bool, db: Annotated[Session, Depends(get_db)]):
+def update_todo(
+    todo_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    completed: bool = Body(),
+):
     db_todo = db.query(TodoDB).filter(TodoDB.id == todo_id).first()
     if not db_todo:
         raise HTTPException(status_code=404, detail="Todo not found")
@@ -115,7 +124,10 @@ def update_todo(todo_id: int, completed: bool, db: Annotated[Session, Depends(ge
 
 # 4. 删除Todo
 @app.delete("/api/todos/{todo_id}")
-def delete_todo(todo_id: int, db: Annotated[Session, Depends(get_db)]):
+def delete_todo(
+    todo_id: int,
+    db: Annotated[Session, Depends(get_db)],
+):
     db_todo = db.query(TodoDB).filter(TodoDB.id == todo_id).first()
     if not db_todo:
         raise HTTPException(status_code=404, detail="Todo not found")
