@@ -2,13 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
 
-// 配置axios：开发环境用代理，生产环境用Render后端地址
-const API_BASE_URL = import.meta.env.DEV
-  ? "/api"
-  : "https://你的Render后端地址/api"; // 替换为实际地址
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "/api",
   timeout: 5000, // 5秒超时
 });
 
