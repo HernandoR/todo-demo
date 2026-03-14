@@ -1,11 +1,11 @@
 {
-    "github.copilot.chat.commitMessageGeneration.instructions": [
-        {
-            "file": ".github/copilot-commit-message-instructions.md",
-        }
-    ],
-    "chat.instructionsFilesLocations": {
-        ".github/python-code-style-instructions.md": true
-    },
-    "python-envs.defaultEnvManager": "ms-python.python:system"
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": ".github/copilot-commit-message-instructions.md"
+    }
+  ],
+  "chat.instructionsFilesLocations": {
+    ".github/python-code-style-instructions.md": true
+  },
+  "python-envs.defaultEnvManager": "ms-python.python:venv"
 }
