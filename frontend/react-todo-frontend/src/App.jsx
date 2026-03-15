@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
+import AddTodoForm from "./components/AddTodoForm";
+import ConnectionError from "./components/ConnectionError";
+import TodoList from "./components/TodoList";
 
 const api = axios.create({
   baseURL: "/api",
@@ -51,7 +54,7 @@ function App() {
     try {
       // 测试请求：获取Todo列表（也可以单独写个健康检查接口）
       await api.get("/todos");
-      fetchTodos(); // 连接成功则加载数据
+      await fetchTodos(); // 连接成功则加载数据
     } catch (error) {
       setIsConnected(false);
       console.error("后端连接失败:", error);
@@ -143,130 +146,43 @@ function App() {
     }
   };
 
-  // 兜底页面：连接失败时显示
-  const renderConnectionError = () => (
-    <div className="connection-error">
-      <div className="error-icon">❌</div>
-      <h2>无法连接到后端服务</h2>
-      <p>可能的原因：</p>
-      <ul className="error-reasons">
-        <li>后端服务未启动或已休眠（Render免费版15分钟无请求会休眠）</li>
-        <li>网络连接问题</li>
-        <li>后端地址配置错误</li>
-      </ul>
-      <button
-        className="retry-btn"
-        onClick={() => checkBackendConnection()}
-        disabled={loading}
-      >
-        {loading ? "重试中..." : "重试连接"}
-      </button>
-      <p className="hint">提示：Render免费后端首次访问可能需要10秒左右唤醒</p>
-    </div>
-  );
+  const addTodoForm = {
+    value: newTodoTitle,
+    loading,
+  };
 
-  // 正常页面：连接成功时显示
-  const renderNormalContent = () => (
-    <>
-      <h1>📝 个人待办事项管理</h1>
+  const addTodoHandlers = {
+    onValueChange: setNewTodoTitle,
+    onSubmit: addTodo,
+  };
 
-      {/* 添加Todo表单 */}
-      <form onSubmit={addTodo} className="add-todo-form">
-        <input
-          type="text"
-          value={newTodoTitle}
-          onChange={(e) => setNewTodoTitle(e.target.value)}
-          placeholder="输入新的待办事项..."
-          className="todo-input"
-          disabled={loading}
-        />
-        <button
-          type="submit"
-          className="add-btn"
-          disabled={loading || !newTodoTitle.trim()}
-        >
-          添加
-        </button>
-      </form>
+  const todoListState = {
+    loading,
+    todos,
+    editingTodoId,
+    editingTodoTitle,
+  };
 
-      {/* Todo列表 */}
-      <div className="todo-list">
-        {loading ? (
-          <p className="loading">加载中...</p>
-        ) : todos.length === 0 ? (
-          <p className="empty-tip">暂无待办事项，添加一个开始吧！</p>
-        ) : (
-          todos.map((todo) => (
-            <div
-              key={todo.id}
-              className={`todo-item ${todo.completed ? "completed" : ""}`}
-            >
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => toggleTodo(todo.id, todo.completed)}
-                disabled={loading || editingTodoId === todo.id}
-              />
-              {editingTodoId === todo.id ? (
-                <input
-                  type="text"
-                  value={editingTodoTitle}
-                  onChange={(e) => setEditingTodoTitle(e.target.value)}
-                  className="edit-input"
-                  disabled={loading}
-                />
-              ) : (
-                <span className="todo-title">{todo.title}</span>
-              )}
-              <div className="todo-actions">
-                {editingTodoId === todo.id ? (
-                  <>
-                    <button
-                      onClick={() => saveTodoTitle(todo.id)}
-                      className="edit-btn save-btn"
-                      disabled={
-                        loading ||
-                        !editingTodoTitle.trim() ||
-                        editingTodoTitle.trim() === todo.title.trim()
-                      }
-                    >
-                      保存
-                    </button>
-                    <button
-                      onClick={cancelEditingTodo}
-                      className="edit-btn cancel-btn"
-                      disabled={loading}
-                    >
-                      取消
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => startEditingTodo(todo)}
-                    className="edit-btn"
-                    disabled={loading}
-                  >
-                    编辑
-                  </button>
-                )}
-                <button
-                  onClick={() => deleteTodo(todo.id)}
-                  className="delete-btn"
-                  disabled={loading}
-                >
-                  删除
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </>
-  );
+  const todoListHandlers = {
+    onEditingTitleChange: setEditingTodoTitle,
+    onToggle: toggleTodo,
+    onStartEdit: startEditingTodo,
+    onSave: saveTodoTitle,
+    onCancel: cancelEditingTodo,
+    onDelete: deleteTodo,
+  };
 
   return (
     <div className="app-container">
-      {isConnected ? renderNormalContent() : renderConnectionError()}
+      {isConnected ? (
+        <>
+          <h1>📝 个人待办事项管理</h1>
+          <AddTodoForm form={addTodoForm} handlers={addTodoHandlers} />
+          <TodoList state={todoListState} handlers={todoListHandlers} />
+        </>
+      ) : (
+        <ConnectionError loading={loading} onRetry={checkBackendConnection} />
+      )}
     </div>
   );
 }
