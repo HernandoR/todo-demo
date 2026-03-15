@@ -12,7 +12,7 @@ function ConnectionError({ loading, onRetry }) {
       <button className="retry-btn" onClick={onRetry} disabled={loading}>
         {loading ? "重试中..." : "重试连接"}
       </button>
-      <p className="hint">提示：Render免费后端首次访问可能需要10秒左右唤醒</p>
+      <p className="hint">提示：Render免费后端休眠后需要 2 min 左右 重新唤醒</p>
     </div>
   );
 }
