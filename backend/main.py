@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from contextlib import asynccontextmanager
 from typing import Annotated, Generator, List, Optional
 
@@ -118,13 +119,14 @@ app = FastAPI(
 # middle ware, time logger, cors
 @app.middleware("http")
 async def log_request_time(request, call_next):
-    logger.debug("Received request: {} {}", request.method, request.url.path)
+    start_time = time.perf_counter()
     response = await call_next(request)
-    logger.debug(
-        "Completed request: {} {} with status code {}",
+    duration = time.perf_counter() - start_time
+    logger.info(
+        "{} {} completed in {:.2f} ms",
         request.method,
         request.url.path,
-        response.status_code,
+        duration * 1000,
     )
     return response
 
