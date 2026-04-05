@@ -115,6 +115,20 @@ app = FastAPI(
 # )
 
 
+# middle ware, time logger, cors
+@app.middleware("http")
+async def log_request_time(request, call_next):
+    logger.debug("Received request: {} {}", request.method, request.url.path)
+    response = await call_next(request)
+    logger.debug(
+        "Completed request: {} {} with status code {}",
+        request.method,
+        request.url.path,
+        response.status_code,
+    )
+    return response
+
+
 # --------------------------
 # Pydantic 模型（前后端交互）
 # --------------------------
